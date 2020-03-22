@@ -1,6 +1,6 @@
 class TimeSeriesRecovered {
   final DateTime time;
-  final int sales;
+  final int count;
   
-  TimeSeriesRecovered(this.time, this.sales);
+  TimeSeriesRecovered(this.time, this.count);
 }

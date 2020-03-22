@@ -39,6 +39,7 @@ class _LocationsDropdownState extends State<LocationsDropdown> {
               setState(() {
                 dropdownValue = country;
               });
+              // fire callback to update state for selected country
               widget.callback(country);
             },
           ),

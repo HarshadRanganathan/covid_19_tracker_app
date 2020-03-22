@@ -30,7 +30,7 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
     super.initState();
     _controller = AnimationController(vsync: this);
     _startAnimation();
-    _getLocationsData();
+    _getLocationsDataWithTimeline();
   }
 
   @override
@@ -50,69 +50,64 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
     });
   }
 
-  void _setRecoveredDataByCountry(String country) {
+  void _updateStateForCountry(String country) {
     _startAnimation();
     setState(() {
       _country = country;
     });
   }
 
+  List<charts.Series<TimeSeriesRecovered, DateTime>> getChartSeriesForData(
+      List<TimeSeriesRecovered> timeSeriesData) {
+    return [
+      charts.Series<TimeSeriesRecovered, DateTime>(
+        id: 'Recovered',
+        colorFn: (_, __) => charts.MaterialPalette.green.shadeDefault,
+        domainFn: (TimeSeriesRecovered recovered, _) => recovered.time,
+        measureFn: (TimeSeriesRecovered recovered, _) => recovered.count,
+        data: timeSeriesData,
+      )
+    ];
+  }
+
   void _generateTimeSeriesRecoveredData(var jsonResponse) {
-    List<TimeSeriesRecovered> globalTimeSeriesData = List<TimeSeriesRecovered>();
+    List<TimeSeriesRecovered> globalTimeSeriesData =
+        List<TimeSeriesRecovered>();
     Map<String, int> globalTimeline = Map<String, int>();
-    
+
     jsonResponse['locations'].forEach((location) {
       String country = location['country'];
       Map<String, dynamic> recoveredTimeline =
           location['timelines']['recovered']['timeline'];
 
+      // convert location timelines to list of time series objects
       List<TimeSeriesRecovered> timeSeriesData = List<TimeSeriesRecovered>();
       recoveredTimeline.entries.forEach((e) {
-        // location time series
         timeSeriesData.add(TimeSeriesRecovered(DateTime.parse(e.key), e.value));
-
-        // global time line
-        if(globalTimeline.containsKey(e.key)) globalTimeline[e.key] = globalTimeline[e.key] + e.value;
-        else globalTimeline[e.key] = e.value;
+        // update global data with recovered count
+        globalTimeline[e.key] = globalTimeline.containsKey(e.key)
+            ? globalTimeline[e.key] + e.value
+            : e.value;
       });
 
-      List<charts.Series<TimeSeriesRecovered, DateTime>> chartSeries = [
-        charts.Series<TimeSeriesRecovered, DateTime>(
-          id: 'Recovered',
-          colorFn: (_, __) => charts.MaterialPalette.green.shadeDefault,
-          domainFn: (TimeSeriesRecovered recovered, _) => recovered.time,
-          measureFn: (TimeSeriesRecovered recovered, _) => recovered.sales,
-          data: timeSeriesData,
-        )
-      ];
-
-      _timeSeriesRecovered[country] = chartSeries;
+      _timeSeriesRecovered[country] = getChartSeriesForData(timeSeriesData);
     });
 
-    // add global timeseries
-    globalTimeline.entries.forEach((e) => globalTimeSeriesData.add(TimeSeriesRecovered(DateTime.parse(e.key), e.value)));
+    // convert global timelines to list of time series objects
+    globalTimeline.entries.forEach((e) => globalTimeSeriesData
+        .add(TimeSeriesRecovered(DateTime.parse(e.key), e.value)));
 
-    List<charts.Series<TimeSeriesRecovered, DateTime>> chartSeries = [
-        charts.Series<TimeSeriesRecovered, DateTime>(
-          id: 'Recovered',
-          colorFn: (_, __) => charts.MaterialPalette.green.shadeDefault,
-          domainFn: (TimeSeriesRecovered recovered, _) => recovered.time,
-          measureFn: (TimeSeriesRecovered recovered, _) => recovered.sales,
-          data: globalTimeSeriesData,
-        )
-      ];
-
-      _timeSeriesRecovered['World'] = chartSeries;
+    _timeSeriesRecovered['World'] = getChartSeriesForData(globalTimeSeriesData);
   }
 
-  void _getLocationsData() async {
+  void _getLocationsDataWithTimeline() async {
     const url =
         'https://coronavirus-tracker-api.herokuapp.com/v2/locations?timelines=1';
     var response = await http.get(url);
     if (response.statusCode == 200) {
       var jsonResponse = convert.jsonDecode(response.body);
 
-      // collect location recovery data
+      // collect recovered data for each location
       jsonResponse['locations'].forEach((location) =>
           _locationData[location['country']] = location['latest']['recovered']);
       _locationData['World'] = jsonResponse['latest']['recovered'];
@@ -120,7 +115,7 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
       // generate time series chart data
       _generateTimeSeriesRecoveredData(jsonResponse);
 
-      _setRecoveredDataByCountry('World');
+      _updateStateForCountry('World');
     }
   }
 
@@ -132,7 +127,7 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
           margin: EdgeInsets.only(top: 50.0),
           child: LocationsDropdown(
             countries: _locationData.keys.toList()..sort(),
-            callback: _setRecoveredDataByCountry,
+            callback: _updateStateForCountry,
           ),
         ),
         Container(
@@ -141,7 +136,9 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
             child: InfoCircle(
               animation: _controller,
               title: 'Total Recovered',
-              count: _locationData.containsKey(_country)?_countFormatter.format(_locationData[_country]):'NA',
+              count: _locationData.containsKey(_country)
+                  ? _countFormatter.format(_locationData[_country])
+                  : 'NA',
             ),
           ),
         ),
