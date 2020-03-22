@@ -20,9 +20,10 @@ class _HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Covid-19 Tracker'),
-        ),
-        body: Stats());
+      appBar: AppBar(
+        title: Text('Covid-19 Tracker'),
+      ),
+      body: Stats(),
+    );
   }
 }

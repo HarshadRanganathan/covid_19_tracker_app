@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class LocationsDropdown extends StatefulWidget {
-  final Iterable<String> countries;
+  final List<String> countries;
   final Function callback;
 
   LocationsDropdown({@required this.countries, @required this.callback});
@@ -22,7 +22,6 @@ class _LocationsDropdownState extends State<LocationsDropdown> {
       children: <Widget>[
         Container(
           margin: EdgeInsets.symmetric(horizontal: 10),
-          padding: EdgeInsets.all(10),
           child: Text(
             'Choose Country',
             style: TextStyle(color: Colors.green),
