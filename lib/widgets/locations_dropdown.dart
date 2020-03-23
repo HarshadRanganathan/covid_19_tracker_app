@@ -24,7 +24,10 @@ class _LocationsDropdownState extends State<LocationsDropdown> {
           margin: EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             'Choose Country',
-            style: TextStyle(color: Colors.green),
+            style: TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         Container(

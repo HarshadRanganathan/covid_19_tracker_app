@@ -1,13 +1,18 @@
 import 'dart:convert' as convert;
 import 'package:covid_19_tracker_app/model/time_series_recovered.dart';
+import 'package:covid_19_tracker_app/widgets/virus_particles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:connectivity/connectivity.dart';
 import '../widgets/locations_dropdown.dart';
 import '../widgets/info_circle.dart';
 import '../charts/time_series_chart.dart';
 import '../model/time_series_recovered.dart';
+import '../widgets/credits.dart';
+import '../dialogs/no_internet.dart';
 
 class Stats extends StatefulWidget {
   @override
@@ -30,7 +35,8 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
     super.initState();
     _controller = AnimationController(vsync: this);
     _startAnimation();
-    _getLocationsDataWithTimeline();
+    SchedulerBinding.instance
+        .addPostFrameCallback((_) => _getLocationsDataWithTimeline(context));
   }
 
   @override
@@ -100,62 +106,85 @@ class _StatsState extends State<Stats> with SingleTickerProviderStateMixin {
     _timeSeriesRecovered['World'] = getChartSeriesForData(globalTimeSeriesData);
   }
 
-  void _getLocationsDataWithTimeline() async {
+  void _getLocationsDataWithTimeline(BuildContext context) async {
     const url =
         'https://coronavirus-tracker-api.herokuapp.com/v2/locations?timelines=1';
-    var response = await http.get(url);
-    if (response.statusCode == 200) {
-      var jsonResponse = convert.jsonDecode(response.body);
 
-      // collect recovered data for each location
-      jsonResponse['locations'].forEach((location) =>
-          _locationData[location['country']] = location['latest']['recovered']);
-      _locationData['World'] = jsonResponse['latest']['recovered'];
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      showNoInternetDialog(context, _getLocationsDataWithTimeline);
+    } else {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var jsonResponse = convert.jsonDecode(response.body);
 
-      // generate time series chart data
-      _generateTimeSeriesRecoveredData(jsonResponse);
+        // collect recovered data for each location
+        jsonResponse['locations'].forEach((location) =>
+            _locationData[location['country']] =
+                location['latest']['recovered']);
+        _locationData['World'] = jsonResponse['latest']['recovered'];
 
-      _updateStateForCountry('World');
+        // generate time series chart data
+        _generateTimeSeriesRecoveredData(jsonResponse);
+
+        _updateStateForCountry('World');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: <Widget>[
-        Container(
-          margin: EdgeInsets.only(top: 50.0),
-          child: LocationsDropdown(
-            countries: _locationData.keys.toList()..sort(),
-            callback: _updateStateForCountry,
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.only(top: 50.0),
-          child: Center(
-            child: InfoCircle(
-              animation: _controller,
-              title: 'Total Recovered',
-              count: _locationData.containsKey(_country)
-                  ? _countFormatter.format(_locationData[_country])
-                  : 'NA',
-            ),
-          ),
-        ),
-        _timeSeriesRecovered.containsKey(_country)
-            ? Container(
-                height: 200.0,
-                width: 200.0,
-                padding: EdgeInsets.all(15),
-                margin: EdgeInsets.only(top: 30),
-                child: TimeSeriesChart(_timeSeriesRecovered[_country]),
-              )
-            : Container(
-                alignment: Alignment.center,
-                margin: EdgeInsets.only(top: 100),
-                child: Text('No time series data available'),
+    return _locationData.length == 0
+        ? Stack(children: <Widget>[Positioned.fill(child: VirusParticles(30))])
+        : ListView(
+            children: <Widget>[
+              Container(
+                margin: EdgeInsets.only(top: 50.0),
+                child: LocationsDropdown(
+                  countries: _locationData.keys.toList()..sort(),
+                  callback: _updateStateForCountry,
+                ),
               ),
-      ],
-    );
+              Container(
+                margin: EdgeInsets.only(top: 75.0),
+                child: Center(
+                  child: InfoCircle(
+                    animation: _controller,
+                    title: 'Total Recovered',
+                    count: _locationData.containsKey(_country)
+                        ? _countFormatter.format(_locationData[_country])
+                        : 'NA',
+                  ),
+                ),
+              ),
+              Container(
+                alignment: Alignment.topLeft,
+                margin: EdgeInsets.only(top: 100),
+                padding: EdgeInsets.all(15),
+                child: Text(
+                  'Recovery Statistics',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              _timeSeriesRecovered.containsKey(_country)
+                  ? Container(
+                      height: 200.0,
+                      width: 200.0,
+                      padding: EdgeInsets.all(15),
+                      margin: EdgeInsets.only(top: 30),
+                      child: TimeSeriesChart(_timeSeriesRecovered[_country]),
+                    )
+                  : Container(
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.only(top: 50),
+                      child: Text('Time series data not available'),
+                    ),
+              Credits(),
+            ],
+          );
   }
 }
