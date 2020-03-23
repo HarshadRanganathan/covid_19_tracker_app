@@ -54,9 +54,11 @@ class _VirusParticlesState extends State<VirusParticles> {
       startTime: Duration(seconds: 30),
       onTick: _simulateVirusParticles,
       builder: (context, time) {
-        return CustomPaint(
-          painter: VirusParticlePainter(particles, image, time),
-        );
+        return isImageloaded
+            ? CustomPaint(
+                painter: VirusParticlePainter(particles, image, time),
+              )
+            : SizedBox.shrink();
       },
     );
   }
