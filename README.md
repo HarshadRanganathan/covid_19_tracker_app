@@ -1,16 +1,15 @@
 # covid_19_tracker_app
 
-A new Flutter project.
+Track number of people recovered from Covid-19 infection across the world.
 
-## Getting Started
+Additionally, time series chart is available to visualize the number of people recovered over a period of time.
 
-This project is a starting point for a Flutter application.
+Data is provided by <https://github.com/ExpDev07/coronavirus-tracker-api> sourcing from JHU.
 
-A few resources to get you started if this is your first Flutter project:
+![Covid-19 Tracker App](https://i.imgur.com/EQnis0k.gif)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+Credits:
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+[1] <https://github.com/CSSEGISandData/COVID-19>
+
+[2] <https://github.com/ExpDev07/coronavirus-tracker-api>
