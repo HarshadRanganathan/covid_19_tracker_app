@@ -6,7 +6,7 @@ Additionally, time series chart is available to visualize the number of people r
 
 Data is provided by <https://github.com/ExpDev07/coronavirus-tracker-api> sourcing from JHU.
 
-![Covid-19 Tracker App](https://i.imgur.com/EQnis0k.gif)
+![Covid-19 Tracker App](https://i.imgur.com/EYDqt7c.gif)
 
 Credits:
 
